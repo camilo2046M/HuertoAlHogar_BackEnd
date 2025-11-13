@@ -28,11 +28,11 @@ class ProductoServiceTest {
     private Producto producto1;
     private Producto producto2;
 
-    @BeforeEach // 3. (Opcional) Se ejecuta antes de CADA prueba
+    @BeforeEach
     void setUp() {
-        // Preparamos datos de prueba
-        producto1 = new Producto(1L, "Manzana", "Villarica", "$2.500 / kg", "/img/manzana.jpg", "Rica", 100);
-        producto2 = new Producto(2L, "Miel", "Nacimiento", "$5.000 / frasco", "/img/miel.jpg", "Dulce", 50);
+        // ✅ CORRECTO (8 argumentos, con la categoría al final)
+        producto1 = new Producto(1L, "Manzana", "Villarica", "$2.500 / kg", "/img/manzana.jpg", "Rica", 100, "Frutas");
+        producto2 = new Producto(2L, "Miel", "Nacimiento", "$5.000 / frasco", "/img/miel.jpg", "Dulce", 50, "Organicos");
     }
 
     // --- Prueba para getAllProductos (sin paginación) ---

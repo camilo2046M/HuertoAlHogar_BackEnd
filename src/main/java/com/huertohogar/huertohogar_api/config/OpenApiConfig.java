@@ -1,7 +1,10 @@
 package com.huertohogar.huertohogar_api.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,6 +17,13 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("HuertoAlHogar API")
                         .version("1.0")
-                        .description("API REST para la gestión de productos, usuarios y pedidos de HuertoAlHogar."));
+                        .description("API REST para la gestión de productos, usuarios y pedidos de HuertoAlHogar. Protegida con JWT."))
+                .components(new Components()
+                        .addSecuritySchemes("bearerAuth", // Nombre de referencia
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 }

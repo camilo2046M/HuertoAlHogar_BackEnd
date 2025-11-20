@@ -1,4 +1,5 @@
 package com.huertohogar.huertohogar_api.security;
+
 import com.huertohogar.huertohogar_api.security.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,11 +19,28 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService; // Usaremos tu nuevo CustomUserDetailsService
+    private final UserDetailsService userDetailsService;
 
     public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+    }
+
+    /**
+     * Define qué rutas deben ser ignoradas por este filtro.
+     * Si devuelve 'true', el filtro se salta automáticamente para esa URL.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+
+        // Excluir rutas públicas que ya están en SecurityConfig.permitAll()
+        return path.startsWith("/api/usuarios/login") ||
+                path.startsWith("/api/usuarios/register") ||
+                path.startsWith("/api/productos") ||
+                path.startsWith("/h2-console") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs");
     }
 
     @Override
@@ -34,6 +52,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userCorreo;
+
+        // Si shouldNotFilter devuelve 'true', esta parte del código se salta automáticamente.
 
         // 1. Verificar si hay token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -52,14 +72,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userCorreo);
 
             // 4. Validar token
-            System.out.println("DEBUG: Correo extraído del token: " + userCorreo); // <-- Pista 1
-
             if (jwtService.isTokenValid(jwt, userDetails)) {
-                System.out.println("DEBUG: ✅ TOKEN VÁLIDO. Continúa la ejecución."); // <-- Pista 2
+                // Crear objeto de autenticación
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
 
-                // ... (restablecer el contexto de seguridad) ...
-            } else {
-                System.out.println("DEBUG: ❌ TOKEN INVÁLIDO. FALLA LA VALIDACIÓN."); // <-- Pista 3
+                // Establecer la autenticación en el contexto de seguridad
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 

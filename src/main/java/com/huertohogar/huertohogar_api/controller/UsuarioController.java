@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import com.huertohogar.huertohogar_api.security.JwtService;
@@ -44,23 +45,30 @@ public class UsuarioController {
     @PostMapping("/login")
     @Operation(summary = "Autenticar un usuario y generar JWT")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
-        System.out.println("DEBUG: ¡El controlador de Login se ha ejecutado!");
-        Authentication authentication = authenticationManager.authenticate(
-                // Usa el correo como "username"
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getCorreo(),
-                        loginRequest.getPassword()
-                )
+
+        // ********************************************************
+        // 🚨 PRUEBA DE DIAGNÓSTICO: Bypass del AuthenticationManager
+        // ********************************************************
+
+        Optional<Usuario> usuarioOpt = usuarioService.loginUsuario(
+                loginRequest.getCorreo(),
+                loginRequest.getPassword()
         );
 
-        if (authentication.isAuthenticated()) {
-            String token = jwtService.generateToken(loginRequest.getCorreo());
+        if (usuarioOpt.isPresent()) {
+            // Si la verificación manual pasa:
+            String correoPrincipal = usuarioOpt.get().getCorreo();
+            String token = jwtService.generateToken(correoPrincipal);
 
             Map<String, String> response = Map.of("token", token);
+            System.out.println("DIAGNÓSTICO: ✅ Verificación Manual Exitosa. Token generado.");
             return ResponseEntity.ok(response);
+
+        } else {
+            // Si la verificación manual falla (Password Mismatch):
+            System.err.println("DIAGNÓSTICO: ❌ Verificación Manual Fallida.");
+            // NOTA: Usamos 401 porque el AuthenticationManager fallaría en este punto.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas (Fallo manual).");
         }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
     }
-
 }

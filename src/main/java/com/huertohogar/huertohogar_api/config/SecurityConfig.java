@@ -23,15 +23,17 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
+
     // Inyección de dependencias por constructor
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
+                          UserDetailsService userDetailsService) { // ⬅️ QUITAMOS AuthenticationProvider
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
     }
 
-
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider ) throws Exception {
+        
         http
                 // 1. Deshabilitar CSRF
                 .csrf(csrf -> csrf.disable())
@@ -39,7 +41,7 @@ public class SecurityConfig {
                 // 2. Deshabilitar frameOptions para H2 Console (CRÍTICO)
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
 
-                .authorizeHttpRequests(authz -> authz
+                .authorizeHttpRequests(auth -> auth
                         // Rutas públicas: login, register, swagger, h2-console
                         .requestMatchers(
                                 "/api/usuarios/register",
@@ -61,7 +63,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authenticationProvider(authenticationProvider())
+                .authenticationProvider(authenticationProvider)
 
                 // 3. CORRECCIÓN: Usar la clase *Filter*
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // <-- ¡ESTA ES LA CORRECCIÓN!
@@ -69,10 +71,10 @@ public class SecurityConfig {
         return http.build();
     }
     @Bean
-    public AuthenticationProvider authenticationProvider() {
+    public AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 

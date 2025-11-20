@@ -8,8 +8,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import com.huertohogar.huertohogar_api.security.JwtService;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,26 +23,32 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@Tag(name = "Usuarios", description = "API para la gestión de usuarios")
+@Tag(name = "Usuarios", description = "API para la gestión de usuarios y autenticación (JWT)")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final AuthenticationManager authenticationManager; // ¡Nuevo!
+    private final JwtService jwtService; // ¡Nuevo!
 
-    // Inyección por constructor (la mejor práctica)
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, AuthenticationManager authenticationManager, JwtService jwtService) {
         this.usuarioService = usuarioService;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
-    // --- Endpoint para REGISTRAR un nuevo usuario ---
-    @PostMapping("/register") // Usamos /api/usuarios/register
+    @PostMapping("/register")
     @Operation(summary = "Registrar un nuevo usuario")
     public Usuario registrarUsuario(@Valid @RequestBody Usuario usuario) {
         return usuarioService.registrarUsuario(usuario);
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Autenticar un usuario (Iniciar Sesión)")
+    @Operation(summary = "Autenticar un usuario y generar JWT")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
+
+        // ********************************************************
+        // 🚨 PRUEBA DE DIAGNÓSTICO: Bypass del AuthenticationManager
+        // ********************************************************
 
         Optional<Usuario> usuarioOpt = usuarioService.loginUsuario(
                 loginRequest.getCorreo(),
@@ -45,37 +56,19 @@ public class UsuarioController {
         );
 
         if (usuarioOpt.isPresent()) {
-            // Login exitoso: Devuelve 200 OK y el objeto Usuario
-            // (Ocultamos la contraseña en la respuesta por seguridad)
-            Usuario usuario = usuarioOpt.get();
-            usuario.setPassword(null); // No enviar el hash de la contraseña al frontend
-            return ResponseEntity.ok(usuario);
+            // Si la verificación manual pasa:
+            String correoPrincipal = usuarioOpt.get().getCorreo();
+            String token = jwtService.generateToken(correoPrincipal);
+
+            Map<String, String> response = Map.of("token", token);
+            System.out.println("DIAGNÓSTICO: ✅ Verificación Manual Exitosa. Token generado.");
+            return ResponseEntity.ok(response);
+
         } else {
-            // Login fallido: Devuelve 401 Unauthorized
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
+            // Si la verificación manual falla (Password Mismatch):
+            System.err.println("DIAGNÓSTICO: ❌ Verificación Manual Fallida.");
+            // NOTA: Usamos 401 porque el AuthenticationManager fallaría en este punto.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas (Fallo manual).");
         }
     }
-
-    // --- Manejador de Excepciones (copiado de ProductoController) ---
-    // Atrapa los errores de @Valid para este controlador
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    public Map<String, Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
-
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> {
-            String fieldName = error.getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("errors", errors);
-
-        return body;
-    }
-
-    // (Más adelante añadiremos aquí el endpoint de Login)
 }

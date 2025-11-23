@@ -48,7 +48,7 @@ public class PedidoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String crearPedidoYGenerarPago(PedidoRequestDto pedidoRequest) throws StripeException {
 
         // --- 1. GUARDAR EL PEDIDO (Esto es igual que antes) ---
@@ -106,7 +106,7 @@ public class PedidoService {
                                             .setProductData(
                                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                             .setName(detalle.getProducto().getNombre())
-                                                            .addImage(detalle.getProducto().getImagenSrc()) // Opcional
+                                                            //.addImage(detalle.getProducto().getImagenSrc()) // Opcional
                                                             .build()
                                             )
                                             .build()

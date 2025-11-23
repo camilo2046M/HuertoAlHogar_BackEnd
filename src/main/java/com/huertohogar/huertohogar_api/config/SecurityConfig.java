@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,6 +38,7 @@ public class SecurityConfig {
         http
                 // 1. Deshabilitar CSRF
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
 
                 // 2. Deshabilitar frameOptions para H2 Console (CRÍTICO)
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
@@ -45,6 +47,7 @@ public class SecurityConfig {
                         // Rutas públicas: login, register, swagger, h2-console
                         .requestMatchers(
                                 "/api/usuarios/register",
+                                "/api/auth/**",
                                 "/api/usuarios/login",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",

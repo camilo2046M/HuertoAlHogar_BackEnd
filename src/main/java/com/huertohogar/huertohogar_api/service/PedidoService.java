@@ -48,7 +48,7 @@ public class PedidoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String crearPedidoYGenerarPago(PedidoRequestDto pedidoRequest) throws StripeException {
 
         // --- 1. GUARDAR EL PEDIDO (Esto es igual que antes) ---
@@ -102,11 +102,11 @@ public class PedidoService {
                             .setPriceData(
                                     SessionCreateParams.LineItem.PriceData.builder()
                                             .setCurrency("clp") // ¡Importante! Peso Chileno
-                                            .setUnitAmount((long) (detalle.getPrecioUnitario() * 100)) // Stripe usa centavos
+                                            .setUnitAmount((long) (detalle.getPrecioUnitario()*1)) // Stripe usa centavos
                                             .setProductData(
                                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                             .setName(detalle.getProducto().getNombre())
-                                                            .addImage(detalle.getProducto().getImagenSrc()) // Opcional
+                                                            //.addImage(detalle.getProducto().getImagenSrc()) // Opcional
                                                             .build()
                                             )
                                             .build()

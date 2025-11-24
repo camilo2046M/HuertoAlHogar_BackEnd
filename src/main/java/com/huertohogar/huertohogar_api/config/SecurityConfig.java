@@ -51,7 +51,9 @@ public class SecurityConfig {
                                 "/api/usuarios/login",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/h2-console/**"
+                                "/h2-console/**",
+                                "/api/posts/**"
+
                         ).permitAll()
 
                         // Permitir GET para ver productos sin autenticación

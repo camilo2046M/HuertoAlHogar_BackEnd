@@ -5,12 +5,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "usuarios") // Es buena práctica nombrar la tabla en plural
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Usuario {
@@ -34,6 +36,9 @@ public class Usuario {
 
     private String direccion;
     private String telefono;
+
+    @Column(nullable = false)
+    private String role;
 
 
 }

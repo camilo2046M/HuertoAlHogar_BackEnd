@@ -1,19 +1,20 @@
 package com.huertohogar.huertohogar_api.security;
 
-import com.huertohogar.huertohogar_api.security.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -26,66 +27,50 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Define qué rutas deben ser ignoradas por este filtro.
-     * Si devuelve 'true', el filtro se salta automáticamente para esa URL.
-     */
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-
-        // Excluir rutas públicas que ya están en SecurityConfig.permitAll()
-        return path.startsWith("/api/usuarios/login") ||
-                path.startsWith("/api/usuarios/register") ||
-                path.startsWith("/api/productos") ||
+        return path.startsWith("/api/auth/login") ||
+                path.startsWith("/api/auth/register") ||
                 path.startsWith("/h2-console") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs");
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userCorreo;
-
-        // Si shouldNotFilter devuelve 'true', esta parte del código se salta automáticamente.
-
-        // 1. Verificar si hay token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2. Extraer token
-        jwt = authHeader.substring(7);
-        userCorreo = jwtService.extractUserCorreo(jwt); // El correo es el identificador
+        final String jwt = authHeader.substring(7);
+        final String userCorreo = jwtService.extractUserCorreo(jwt);
 
-        // 3. Autenticar si el correo es válido y no hay autenticación previa
         if (userCorreo != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // Cargar los detalles del usuario
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userCorreo);
+            // Extraemos roles desde el token
+            List<String> authorities = jwtService.extractClaim(jwt, claims ->
+                    (List<String>) claims.get("authorities")
+            );
 
-            // 4. Validar token
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                // Crear objeto de autenticación
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+            List<SimpleGrantedAuthority> grantedAuthorities = authorities.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toList());
 
-                // Establecer la autenticación en el contexto de seguridad
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(userCorreo, null, grantedAuthorities);
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            System.out.println("--- DEBUG FILTER ---");
+            System.out.println("Autenticando usuario: " + userCorreo);
+            System.out.println("Con autoridades: " + grantedAuthorities);
+            System.out.println("--------------------");
         }
 
         filterChain.doFilter(request, response);

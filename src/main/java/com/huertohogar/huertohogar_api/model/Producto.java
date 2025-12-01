@@ -1,6 +1,7 @@
 package com.huertohogar.huertohogar_api.model;
 
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,8 +18,8 @@ import jakarta.validation.constraints.Size;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Producto {
 
+public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -34,6 +35,7 @@ public class Producto {
     private String precio;
 
     private String imagenSrc;
+
     private String descripcion;
 
     @NotNull(message = "El stock no puede ser nulo")

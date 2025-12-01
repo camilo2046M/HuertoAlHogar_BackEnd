@@ -1,4 +1,5 @@
 package com.huertohogar.huertohogar_api.security;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -10,24 +11,29 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    // Clave secreta para firmar el token. ¡Cambiar en producción!
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
 
-    // Tiempo de expiración del token (ej: 24 horas en milisegundos)
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24h
 
-    public String generateToken(String correo) {
-        // El 'subject' (sujeto) del token será el correo del usuario
+    // Genera token incluyendo la lista de authorities
+    public String generateToken(String correo, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", List.of(role));
+        return buildToken(claims, correo);
+    }
+
+    private String buildToken(Map<String, Object> extraClaims, String subject) {
         return Jwts.builder()
-                .setClaims(new HashMap<>())
-                .setSubject(correo)
+                .setClaims(extraClaims)
+                .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(getSignInKey(), Jwts.SIG.HS256)
@@ -51,18 +57,17 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parser()
-                .setSigningKey(getSignInKey())
+        return Jwts.parser()
+                .verifyWith(getSignInKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private SecretKey getSignInKey() {

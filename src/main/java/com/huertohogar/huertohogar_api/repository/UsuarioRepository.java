@@ -1,6 +1,6 @@
 package com.huertohogar.huertohogar_api.repository;
 
-import com.huertohogar.huertohogar_api.model.Usuario;
+import  com.huertohogar.huertohogar_api.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

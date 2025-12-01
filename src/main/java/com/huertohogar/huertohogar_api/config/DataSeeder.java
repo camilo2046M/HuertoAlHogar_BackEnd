@@ -2,11 +2,14 @@ package com.huertohogar.huertohogar_api.config;
 
 import com.huertohogar.huertohogar_api.model.Post;
 import com.huertohogar.huertohogar_api.model.Producto;
+import com.huertohogar.huertohogar_api.model.Usuario;
 import com.huertohogar.huertohogar_api.repository.PostRepository;
 import com.huertohogar.huertohogar_api.repository.ProductoRepository;
+import com.huertohogar.huertohogar_api.repository.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
@@ -14,7 +17,7 @@ import java.util.List;
 public class DataSeeder {
 
     @Bean
-    CommandLineRunner initDatabase(ProductoRepository repository, PostRepository postRepository) {
+    CommandLineRunner initDatabase(ProductoRepository repository, PostRepository postRepository, UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             // Solo precargar si la base de datos está vacía
             if (repository.count() == 0) {
@@ -61,6 +64,27 @@ public class DataSeeder {
                 );
                 postRepository.saveAll(posts);
                 System.out.println("✅ Blog Posts cargados.");
+            }
+            if (usuarioRepository.count() == 0) {
+
+                // Crear un ADMIN
+                Usuario admin = new Usuario();
+                admin.setNombre("Administrador Principal");
+                admin.setCorreo("admin@huerto.cl");
+                admin.setPassword(passwordEncoder.encode("admin123")); // ¡Encriptamos!
+                admin.setRole("ADMIN"); // 👈 ROL IMPORTANTE
+                admin.setDireccion("Oficina Central");
+                admin.setTelefono("999999999");
+
+                // Crear un USER normal (para pruebas rápidas)
+                Usuario user = new Usuario();
+                user.setNombre("Cliente Frecuente");
+                user.setCorreo("cliente@huerto.cl");
+                user.setPassword(passwordEncoder.encode("cliente123"));
+                user.setRole("USER");
+
+                usuarioRepository.saveAll(List.of(admin, user));
+                System.out.println("✅ Usuarios de prueba cargados (Admin y Cliente).");
             }
         };
     }

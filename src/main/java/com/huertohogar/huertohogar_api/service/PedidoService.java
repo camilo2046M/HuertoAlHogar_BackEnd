@@ -6,10 +6,7 @@ import com.huertohogar.huertohogar_api.model.DetallePedido;
 import com.huertohogar.huertohogar_api.model.Pedido;
 import com.huertohogar.huertohogar_api.model.Producto;
 import com.huertohogar.huertohogar_api.model.Usuario;
-import com.huertohogar.huertohogar_api.repository.DetallePedidoRepository;
-import com.huertohogar.huertohogar_api.repository.PedidoRepository;
-import com.huertohogar.huertohogar_api.repository.ProductoRepository;
-import com.huertohogar.huertohogar_api.repository.UsuarioRepository;
+import com.huertohogar.huertohogar_api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,43 +22,46 @@ import java.util.List;
 @Service
 public class PedidoService {
 
+    private final CarritoRepository carritoRepository;
     private final PedidoRepository pedidoRepository;
     private final DetallePedidoRepository detallePedidoRepository;
     private final ProductoRepository productoRepository;
     private final UsuarioRepository usuarioRepository;
 
-    // Función para limpiar el string de precio (la copiamos de App.jsx)
-    private Double getPrice(String precioString) {
-        if (precioString == null) return 0.0;
-        String cleanPrice = precioString
-                .replace("$", "")
-                .replace(".", "") // Asumimos que . es separador de miles
-                .replace(",", "."); // Asumimos que , es decimal
-        return Double.parseDouble(cleanPrice.replaceAll("[^0-9.]", ""));
-    }
+    // ELIMINADO: private Double getPrice(String precioString) {...}
+    // Ya no es necesario porque el precio viene limpio como entero.
 
     @Autowired
-    public PedidoService(PedidoRepository pedidoRepository, DetallePedidoRepository detallePedidoRepository, ProductoRepository productoRepository, UsuarioRepository usuarioRepository) {
+    public PedidoService(PedidoRepository pedidoRepository, DetallePedidoRepository detallePedidoRepository, ProductoRepository productoRepository, UsuarioRepository usuarioRepository, CarritoRepository carritoRepository) {
         this.pedidoRepository = pedidoRepository;
         this.detallePedidoRepository = detallePedidoRepository;
         this.productoRepository = productoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.carritoRepository = carritoRepository;
     }
 
     @Transactional(rollbackFor = Exception.class)
     public String crearPedidoYGenerarPago(PedidoRequestDto pedidoRequest) throws StripeException {
 
-        // --- 1. GUARDAR EL PEDIDO (Esto es igual que antes) ---
+        // --- 1. GUARDAR EL PEDIDO ---
         Usuario usuario = usuarioRepository.findById(pedidoRequest.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Pedido nuevoPedido = new Pedido();
         nuevoPedido.setUsuario(usuario);
         nuevoPedido.setDireccionEntrega(pedidoRequest.getDireccionEntrega());
-        nuevoPedido.setTelefonoEntrega(pedidoRequest.getTelefonoEntrega());
-        nuevoPedido.setFechaEntregaPreferida(pedidoRequest.getFechaEntregaPreferida());
+        if (pedidoRequest.getTelefonoEntrega() != null && !pedidoRequest.getTelefonoEntrega().isEmpty()) {
+            nuevoPedido.setTelefonoEntrega(pedidoRequest.getTelefonoEntrega());
+        } else {
+            nuevoPedido.setTelefonoEntrega("Sin teléfono"); // O el teléfono del perfil del usuario
+        };
+        if (pedidoRequest.getFechaEntregaPreferida() != null) {
+            nuevoPedido.setFechaEntregaPreferida(pedidoRequest.getFechaEntregaPreferida());
+        } else {
+            nuevoPedido.setFechaEntregaPreferida(LocalDate.now().plusDays(3));
+        };
         nuevoPedido.setFechaCreacion(LocalDate.now());
-        nuevoPedido.setEstado("PENDIENTE_PAGO"); // ¡Importante!
+        nuevoPedido.setEstado("PENDIENTE_PAGO");
 
         List<DetallePedido> detalles = new ArrayList<>();
         double totalCalculado = 0.0;
@@ -70,7 +70,9 @@ public class PedidoService {
             Producto producto = productoRepository.findById(itemDto.getProductoId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
 
-            Double precioReal = getPrice(producto.getPrecio());
+            // CAMBIO AQUÍ: Obtenemos el int directo y lo convertimos a double para los cálculos
+            int precioInt = producto.getPrecio();
+            double precioReal = (double) precioInt;
 
             DetallePedido detalle = new DetallePedido();
             detalle.setPedido(nuevoPedido);
@@ -78,6 +80,7 @@ public class PedidoService {
             detalle.setCantidad(itemDto.getCantidad());
             detalle.setPrecioUnitario(precioReal);
             detalles.add(detalle);
+
             totalCalculado += (precioReal * itemDto.getCantidad());
         }
 
@@ -86,14 +89,16 @@ public class PedidoService {
 
         // Guardamos el pedido en la BD
         Pedido pedidoGuardado = pedidoRepository.save(nuevoPedido);
+        carritoRepository.deleteByUsuario(usuario);
 
         // --- 2. CREAR SESIÓN DE PAGO EN STRIPE ---
 
         // URLs a las que Stripe redirigirá al usuario
+        // IMPORTANTE: Si estás probando en Android Emulator, localhost no sirve para el redirect del navegador del móvil.
+        // Pero Stripe maneja la sesión en su servidor, así que esto es a dónde vuelve el usuario DESPUÉS de pagar.
         String successUrl = "http://localhost:5173/pago-exitoso?pedido_id=" + pedidoGuardado.getId();
         String cancelUrl = "http://localhost:5173/pago-fallido";
 
-        // Convertimos los detalles del pedido al formato que Stripe entiende
         List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
         for (DetallePedido detalle : pedidoGuardado.getDetalles()) {
             lineItems.add(
@@ -101,12 +106,14 @@ public class PedidoService {
                             .setQuantity(Long.valueOf(detalle.getCantidad()))
                             .setPriceData(
                                     SessionCreateParams.LineItem.PriceData.builder()
-                                            .setCurrency("clp") // ¡Importante! Peso Chileno
-                                            .setUnitAmount((long) (detalle.getPrecioUnitario()*1)) // Stripe usa centavos
+                                            .setCurrency("clp") // Peso Chileno
+                                            // Stripe espera Long. Como CLP no tiene decimales, pasamos el valor entero tal cual.
+                                            // CORRECTO (Extraemos el valor long explícitamente)
+                                            .setUnitAmount(detalle.getPrecioUnitario().longValue())
                                             .setProductData(
                                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                             .setName(detalle.getProducto().getNombre())
-                                                            //.addImage(detalle.getProducto().getImagenSrc()) // Opcional
+                                                            //.addImage(detalle.getProducto().getImagenSrc())
                                                             .build()
                                             )
                                             .build()
@@ -115,7 +122,6 @@ public class PedidoService {
             );
         }
 
-        // Creamos los parámetros de la sesión de pago
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(successUrl)
@@ -123,16 +129,12 @@ public class PedidoService {
                 .addAllLineItem(lineItems)
                 .build();
 
-        // Creamos la sesión en Stripe
         Session session = Session.create(params);
 
-        // Devolvemos la URL de pago
         return session.getUrl();
     }
 
     public List<Pedido> getPedidosPorUsuario(Long usuarioId) {
         return pedidoRepository.findByUsuarioId(usuarioId);
     }
-
-    // (Aquí irían métodos para buscar pedidos, etc.)
 }

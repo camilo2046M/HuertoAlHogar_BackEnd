@@ -1,6 +1,7 @@
 package com.huertohogar.huertohogar_api.controller;
 
 import com.huertohogar.huertohogar_api.dto.LoginRequest;
+import com.huertohogar.huertohogar_api.dto.UpdateUserRequest;
 import com.huertohogar.huertohogar_api.model.Usuario;
 import com.huertohogar.huertohogar_api.repository.UsuarioRepository; // Necesario para buscar el rol al loguear
 import com.huertohogar.huertohogar_api.security.JwtService; // OJO: Tu JwtService debe tener el método actualizado
@@ -108,4 +109,24 @@ public class AuthController {
                     return ResponseEntity.ok(usuario);
                 })
                 .orElse(ResponseEntity.notFound().build());
-    }}
+    }
+
+    @PutMapping("/perfil")
+    public ResponseEntity<?> updatePerfil(@RequestBody UpdateUserRequest request, Authentication auth) {
+        String email = auth.getName();
+        Usuario usuario = usuarioRepository.findByCorreo(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Actualizamos solo lo que viene en el request
+        if (request.getNombre() != null) usuario.setNombre(request.getNombre());
+        if (request.getDireccion() != null) usuario.setDireccion(request.getDireccion());
+
+        // NOTA: Aquí guardamos la ruta de la imagen como texto por ahora.
+        // Para subir archivos reales (JPG) necesitas un endpoint MultipartFile (lo vemos después).
+        if (request.getImagenSrc() != null) usuario.setImagenSrc(request.getImagenSrc());
+
+        usuarioRepository.save(usuario);
+
+        return ResponseEntity.ok(Map.of("message", "Perfil actualizado correctamente"));
+    }
+}

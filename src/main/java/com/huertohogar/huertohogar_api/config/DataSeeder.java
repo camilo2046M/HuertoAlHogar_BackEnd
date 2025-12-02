@@ -25,21 +25,21 @@ public class DataSeeder {
 
                 List<Producto> productos = List.of(
                         // --- FRUTAS ---
-                        new Producto(null, "Manzanas Fuji", "Villarica", "$2.500 / kg", "/images/manzana.jpg", "Manzana crujiente y dulce.", 100, "Frutas"),
-                        new Producto(null, "Naranjas Valencia", "Concepción", "$2.200 / kg", "/images/naranja.jpg", "Jugosas y dulces.", 80, "Frutas"),
-                        new Producto(null, "Plátanos Cavendish", "Santiago", "$1.900 / kg", "/images/platanos.jpg", "Ricos en potasio.", 150, "Frutas"),
+                        new Producto(null, "Manzanas Fuji", "Villarica", 2500, "/images/manzana.jpg", "Manzana crujiente y dulce.", 100, "Frutas"),
+                        new Producto(null, "Naranjas Valencia", "Concepción", 2000, "/images/naranja.jpg", "Jugosas y dulces.", 80, "Frutas"),
+                        new Producto(null, "Plátanos Cavendish", "Santiago", 2000, "/images/platanos.jpg", "Ricos en potasio.", 150, "Frutas"),
 
                         // --- VERDURAS ---
-                        new Producto(null, "Zanahorias Orgánicas", "Valparaíso", "$1.800 / kg", "/images/Zanahoria.png", "Cultivadas sin pesticidas.", 200, "Verduras"),
-                        new Producto(null, "Espinacas Frescas", "Viña del Mar", "$2.000 / bolsa", "/images/espinaca.jpg", "Hojas verdes y tiernas.", 50, "Verduras"),
-                        new Producto(null, "Pimientos Tricolores", "Puerto Montt", "$2.700 / bandeja", "/images/pimenton.jpg", "Rojos, verdes y amarillos.", 60, "Verduras"),
+                        new Producto(null, "Zanahorias Orgánicas", "Valparaíso", 1800, "/images/Zanahoria.png", "Cultivadas sin pesticidas.", 200, "Verduras"),
+                        new Producto(null, "Espinacas Frescas", "Viña del Mar", 2000, "/images/espinaca.jpg", "Hojas verdes y tiernas.", 50, "Verduras"),
+                        new Producto(null, "Pimientos Tricolores", "Puerto Montt", 2700, "/images/pimenton.jpg", "Rojos, verdes y amarillos.", 60, "Verduras"),
 
                         // --- ORGÁNICOS ---
-                        new Producto(null, "Miel Orgánica", "Nacimiento", "$5.000 / frasco", "/images/miel.jpg", "Miel pura de abeja.", 40, "Organicos"),
-                        new Producto(null, "Quinua Orgánica", "Villarica", "$4.200 / bolsa", "/images/quinuo.jpg", "Superalimento andino.", 100, "Organicos"),
+                        new Producto(null, "Miel Orgánica", "Nacimiento", 5000, "/images/miel.jpg", "Miel pura de abeja.", 40, "Organicos"),
+                        new Producto(null, "Quinua Orgánica", "Villarica", 4200, "/images/quinuo.jpg", "Superalimento andino.", 100, "Organicos"),
 
                         // --- LÁCTEOS ---
-                        new Producto(null, "Leche Entera", "Concepción", "$1.500 / litro", "/images/leche.jpg", "Leche fresca de vaca.", 120, "Lacteos")
+                        new Producto(null, "Leche Entera", "Concepción", 1500, "/images/leche.jpg", "Leche fresca de vaca.", 120, "Lacteos")
                 );
 
                 repository.saveAll(productos);

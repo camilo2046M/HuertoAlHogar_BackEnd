@@ -38,16 +38,16 @@ public class PedidoController {
 
             // Creamos un JSON simple para devolver la URL
             Map<String, String> response = new HashMap<>();
-            response.put("urlPago", urlDePago);
+
+            // CORRECCIÓN AQUÍ: Cambiamos "urlPago" por "paymentUrl"
+            response.put("paymentUrl", urlDePago);
 
             // Devolvemos 201 CREATED y el JSON con la URL
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (StripeException e) {
-            // Error de Stripe
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la sesión de pago: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error Stripe: " + e.getMessage());
         } catch (RuntimeException e) {
-            // Error nuestro (ej: Usuario no encontrado)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }

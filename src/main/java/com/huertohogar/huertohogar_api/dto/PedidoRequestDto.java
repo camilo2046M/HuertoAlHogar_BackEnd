@@ -13,6 +13,6 @@ public class PedidoRequestDto {
 
     // Datos del formulario de checkout
     private String direccionEntrega;
-    private String telefonoEntrega;
+    private String telefonoEntrega ;
     private LocalDate fechaEntregaPreferida;
 }

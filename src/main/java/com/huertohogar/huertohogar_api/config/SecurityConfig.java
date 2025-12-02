@@ -50,13 +50,16 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/h2-console/**",
+                                "/error",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/images/**"
                         ).permitAll()
 
                         // 2. Lectura Pública de Productos y Posts (Para que la App cargue sin Login)
                         .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
 
                         // 3. Escritura Restringida (Solo ADMIN)

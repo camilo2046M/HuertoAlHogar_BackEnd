@@ -41,4 +41,8 @@ public class Usuario {
     private String role;
 
 
+    private String imagenSrc;
+
+
+
 }

@@ -6,13 +6,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 @Entity
 @Data
@@ -31,8 +28,9 @@ public class Producto {
     @NotBlank(message = "El origen no puede estar vacío")
     private String origen;
 
-    @NotBlank(message = "El precio no puede estar vacío")
-    private String precio;
+    @NotNull(message = "El precio es obligatorio") // Valida que no sea null
+    @Positive(message = "El precio debe ser mayor a 0") // Valida que sea un número positivo
+    private Integer precio;
 
     private String imagenSrc;
 

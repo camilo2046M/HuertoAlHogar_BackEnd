@@ -41,8 +41,8 @@ class ProductoControllerTest {
     @BeforeEach
     void setUp() {
         // ✅ CORRECTO (8 argumentos, con la categoría al final)
-        producto1 = new Producto(1L, "Manzana", "Villarica", "$2.500 / kg", "/img/manzana.jpg", "Rica", 100, "Frutas");
-        producto2 = new Producto(2L, "Miel", "Nacimiento", "$5.000 / frasco", "/img/miel.jpg", "Dulce", 50, "Organicos");
+        producto1 = new Producto(1L, "Manzana", "Villarica", 2500, "/img/manzana.jpg", "Rica", 100, "Frutas");
+        producto2 = new Producto(2L, "Miel", "Nacimiento",2000 , "/img/miel.jpg", "Dulce", 50, "Organicos");
     }
 
     // --- Prueba para GET /api/productos (con paginación) ---

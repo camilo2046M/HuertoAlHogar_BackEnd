@@ -11,6 +11,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.text.DateFormat;
+import java.util.Date;
+import java.time.*;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -42,4 +46,6 @@ public class Producto {
 
     @NotBlank(message = "La categoría no puede estar vacía")
     private String categoria;
+
+
 }

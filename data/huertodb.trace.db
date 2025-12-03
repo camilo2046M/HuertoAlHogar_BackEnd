@@ -1,0 +1,8 @@
+2025-12-03 12:48:06.714782-03:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabla "PRODUCTO" no encontrada
+Table "PRODUCTO" not found; SQL statement:
+select count(*) from producto p1_0 [42102-232]
+2025-12-03 12:49:10.223512-03:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabla "PRODUCTO" no encontrada
+Table "PRODUCTO" not found; SQL statement:
+select count(*) from producto p1_0 [42102-232]

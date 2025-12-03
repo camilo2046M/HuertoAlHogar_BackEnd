@@ -96,8 +96,9 @@ public class PedidoService {
         // URLs a las que Stripe redirigirá al usuario
         // IMPORTANTE: Si estás probando en Android Emulator, localhost no sirve para el redirect del navegador del móvil.
         // Pero Stripe maneja la sesión en su servidor, así que esto es a dónde vuelve el usuario DESPUÉS de pagar.
-        String successUrl = "http://localhost:5173/pago-exitoso?pedido_id=" + pedidoGuardado.getId();
-        String cancelUrl = "http://localhost:5173/pago-fallido";
+        // Usa TU IP REAL de AWS (sin el puerto 9090, porque el frontend está en el 80)
+        String successUrl = "http://52.44.157.216/pago-exitoso?pedido_id=" + pedidoGuardado.getId();
+        String cancelUrl = "http://52.44.157.216/pago-fallido";
 
         List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
         for (DetallePedido detalle : pedidoGuardado.getDetalles()) {
@@ -130,7 +131,7 @@ public class PedidoService {
                 .build();
 
         Session session = Session.create(params);
-
+        System.out.println("DEBUG STRIPE URL: " + session.getUrl());
         return session.getUrl();
     }
 

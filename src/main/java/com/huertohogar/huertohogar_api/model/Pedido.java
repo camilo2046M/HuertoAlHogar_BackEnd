@@ -55,5 +55,5 @@ public class Pedido {
     private LocalDate fechaEntregaPreferida;
 
     // (MercadoPago nos dará un ID de pago, lo guardaremos aquí)
-    private String mercadoPagoId;
+
 }
